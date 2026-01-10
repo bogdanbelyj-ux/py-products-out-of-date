@@ -98,3 +98,27 @@ def test_with_expiration_date_today() -> None:
         result = outdated_products(products)
 
         assert result == []
+
+
+def test_with_expiration_date_yesterday() -> None:
+    fake_today = datetime.date(2026, 1, 9)
+
+    products = [
+        {
+            "name": "salmon",
+            "expiration_date": datetime.date(2026, 1, 8),
+            "price": 600,
+        },
+        {
+            "name": "chicken",
+            "expiration_date": datetime.date(2026, 1, 9),
+            "price": 120,
+        },
+    ]
+
+    with mock.patch("app.main.datetime") as mocked_date:
+        mocked_date.date.today.return_value = fake_today
+
+        result = outdated_products(products)
+
+        assert result == ["salmon"]
