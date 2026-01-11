@@ -1,124 +1,75 @@
 import datetime
-from unittest import mock
+from unittest.mock import MagicMock
 
+import app.main as main
 from app.main import outdated_products
 
 
-def test_no_outdated_products() -> None:
-    fake_today = datetime.date(2026, 1, 9)
+class TestOutdatedProducts:
+    @staticmethod
+    def mock_today(monkeypatch: MagicMock, fake_today: datetime.date) -> None:
 
-    products = [
-        {
-            "name": "salmon",
-            "expiration_date": datetime.date(2026, 2, 10),
-            "price": 600,
-        },
-        {
-            "name": "chicken",
-            "expiration_date": datetime.date(2026, 2, 5),
-            "price": 120,
-        },
-    ]
+        mock_date = MagicMock(wraps=datetime.date)
+        mock_date.today.return_value = fake_today
+        monkeypatch.setattr(main.datetime, "date", mock_date)
 
-    with mock.patch("app.main.datetime") as mocked_date:
-        mocked_date.date.today.return_value = fake_today
+    def test_no_outdated_products(self, monkeypatch: MagicMock) -> None:
+        fake_today = datetime.date(2026, 1, 9)
+        self.mock_today(monkeypatch, fake_today)
 
-        result = outdated_products(products)
+        products = [
+            {"name": "salmon", "expiration_date": datetime.date(2026, 2, 10)},
+            {"name": "chicken", "expiration_date": datetime.date(2026, 2, 5)},
+        ]
 
-        assert result == []
+        assert outdated_products(products) == []
 
+    def test_one_outdated_product(self, monkeypatch: MagicMock) -> None:
+        fake_today = datetime.date(2026, 1, 9)
+        self.mock_today(monkeypatch, fake_today)
 
-def test_with_one_outdated_product() -> None:
-    fake_today = datetime.date(2026, 1, 9)
+        products = [
+            {"name": "salmon", "expiration_date": datetime.date(2026, 1, 8)},
+            {"name": "chicken", "expiration_date": datetime.date(2026, 2, 5)},
+        ]
 
-    products = [
-        {
-            "name": "salmon",
-            "expiration_date": datetime.date(2026, 1, 8),
-            "price": 600,
-        },
-        {
-            "name": "chicken",
-            "expiration_date": datetime.date(2026, 2, 5),
-            "price": 120,
-        },
-    ]
+        assert outdated_products(products) == ["salmon"]
 
-    with mock.patch("app.main.datetime") as mocked_date:
-        mocked_date.date.today.return_value = fake_today
+    def test_two_outdated_products(self, monkeypatch: MagicMock) -> None:
+        fake_today = datetime.date(2026, 1, 9)
+        self.mock_today(monkeypatch, fake_today)
 
-        result = outdated_products(products)
+        products = [
+            {"name": "salmon", "expiration_date": datetime.date(2026, 1, 5)},
+            {"name": "chicken", "expiration_date": datetime.date(2026, 1, 3)},
+        ]
 
-        assert result == ["salmon"]
+        assert outdated_products(products) == ["salmon", "chicken"]
 
+    def test_expiration_date_today_not_outdated(
+            self,
+            monkeypatch: MagicMock
+    ) -> None:
+        fake_today = datetime.date(2026, 1, 9)
+        self.mock_today(monkeypatch, fake_today)
 
-def test_with_two_outdated_products() -> None:
-    fake_today = datetime.date(2026, 1, 9)
+        products = [
+            {"name": "salmon", "expiration_date": datetime.date(2026, 1, 9)},
+            {"name": "chicken", "expiration_date": datetime.date(2026, 1, 9)},
+        ]
 
-    products = [
-        {
-            "name": "salmon",
-            "expiration_date": datetime.date(2026, 1, 5),
-            "price": 600,
-        },
-        {
-            "name": "chicken",
-            "expiration_date": datetime.date(2026, 1, 3),
-            "price": 120,
-        },
-    ]
+        assert outdated_products(products) == []
 
-    with mock.patch("app.main.datetime") as mocked_date:
-        mocked_date.date.today.return_value = fake_today
+    def test_expiration_date_yesterday_outdated(
+            self,
+            monkeypatch: MagicMock
+    ) -> None:
+        fake_today = datetime.date(2026, 1, 9)
+        self.mock_today(monkeypatch, fake_today)
 
-        result = outdated_products(products)
+        products = [
+            {"name": "salmon", "expiration_date": datetime.date(2026, 1, 8)},
+            {"name": "chicken", "expiration_date": datetime.date(2026, 1, 9)},
+        ]
 
-        assert result == ["salmon", "chicken"]
-
-
-def test_with_expiration_date_today() -> None:
-    fake_today = datetime.date(2026, 1, 9)
-
-    products = [
-        {
-            "name": "salmon",
-            "expiration_date": datetime.date(2026, 1, 9),
-            "price": 600,
-        },
-        {
-            "name": "chicken",
-            "expiration_date": datetime.date(2026, 1, 9),
-            "price": 120,
-        },
-    ]
-
-    with mock.patch("app.main.datetime") as mocked_date:
-        mocked_date.date.today.return_value = fake_today
-
-        result = outdated_products(products)
-
-        assert result == []
-
-
-def test_with_expiration_date_yesterday() -> None:
-    fake_today = datetime.date(2026, 1, 9)
-
-    products = [
-        {
-            "name": "salmon",
-            "expiration_date": datetime.date(2026, 1, 8),
-            "price": 600,
-        },
-        {
-            "name": "chicken",
-            "expiration_date": datetime.date(2026, 1, 9),
-            "price": 120,
-        },
-    ]
-
-    with mock.patch("app.main.datetime") as mocked_date:
-        mocked_date.date.today.return_value = fake_today
-
-        result = outdated_products(products)
-
-        assert result == ["salmon"]
+        assert outdated_products(products) == ["salmon"]
